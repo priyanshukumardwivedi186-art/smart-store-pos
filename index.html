@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2563eb">
+<title>SmartStore POS</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div id="toast"></div>
+<header class="topbar">
+  <button class="icon-btn mobile-only" onclick="toggleSidebar()">☰</button>
+  <div class="brand">🧾 <span id="brandName">SmartStore POS</span></div>
+  <div class="top-actions"><button onclick="toggleDark()">🌙</button><button onclick="showPage('settings')">⚙️</button></div>
+</header>
+
+<div class="layout">
+<aside id="sidebar">
+  <div class="store-mini"><div class="store-logo">🏪</div><div><b id="sideStore">My General Store</b><small>Point of Sale</small></div></div>
+  <nav>
+    <button data-page="dashboard" onclick="showPage('dashboard')">📊 Dashboard</button>
+    <button data-page="billing" onclick="showPage('billing')">🧾 New Bill</button>
+    <button data-page="products" onclick="showPage('products')">📦 Products</button>
+    <button data-page="customers" onclick="showPage('customers')">👥 Customers</button>
+    <button data-page="sales" onclick="showPage('sales')">📋 Sales History</button>
+    <button data-page="ledger" onclick="showPage('ledger')">💸 Udhaar / Ledger</button>
+    <button data-page="reports" onclick="showPage('reports')">📈 Reports</button>
+    <button data-page="settings" onclick="showPage('settings')">⚙️ Settings</button>
+  </nav>
+  <div class="side-bottom"><button onclick="backup()">⬇️ Backup</button><label class="file-btn">⬆️ Restore<input type="file" accept=".json" onchange="restore(event)"></label></div>
+</aside>
+
+<main>
+<section id="dashboard" class="page">
+  <div class="page-head"><div><h1>Dashboard</h1><p>Store overview and today's performance.</p></div><button class="primary" onclick="showPage('billing')">＋ New Bill</button></div>
+  <div class="stats">
+    <div class="stat"><span>Today Sales</span><b id="dSales">₹0</b></div>
+    <div class="stat"><span>Today's Bills</span><b id="dBills">0</b></div>
+    <div class="stat"><span>Products</span><b id="dProducts">0</b></div>
+    <div class="stat warning"><span>Low Stock</span><b id="dLow">0</b></div>
+  </div>
+  <div class="two-col">
+    <div class="card"><h2>Recent Bills</h2><div id="dashBills"></div></div>
+    <div class="card"><h2>Low Stock</h2><div id="dashLow"></div></div>
+  </div>
+</section>
+
+<section id="billing" class="page hidden">
+ <div class="page-head"><div><h1>New Bill</h1><p>Create a receipt, calculate total and generate a bill-specific UPI QR.</p></div><button onclick="newBill()">🆕 Clear</button></div>
+ <div class="billing-grid">
+  <div class="card">
+   <div class="toolbar"><input id="billSearch" placeholder="🔎 Search product..." oninput="renderBillProducts()"><select id="billCat" onchange="renderBillProducts()"><option value="">All categories</option></select></div>
+   <div id="billProducts" class="product-grid"></div>
+   <div class="table-wrap"><table><thead><tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr></thead><tbody id="cart"></tbody></table></div>
+   <div id="cartEmpty" class="empty">Add products to start billing.</div>
+  </div>
+  <div class="card bill-panel">
+   <h2>Customer & Payment</h2>
+   <div class="form-grid"><input id="custName" placeholder="Customer name"><input id="custPhone" placeholder="Mobile number"></div>
+   <div class="form-grid"><input id="billDiscount" type="number" min="0" value="0" placeholder="Discount ₹" oninput="calc()"><input id="billGst" type="number" min="0" value="0" placeholder="GST % " oninput="calc()"></div>
+   <select id="payment" class="full"><option>Cash</option><option>UPI</option><option>Card</option><option>Credit / Udhaar</option></select>
+   <div class="totals"><div><span>Subtotal</span><b id="sub">₹0.00</b></div><div><span>Discount</span><b id="disc">₹0.00</b></div><div><span>GST</span><b id="tax">₹0.00</b></div><div class="grand"><span>Total</span><b id="total">₹0.00</b></div></div>
+   <div class="action-grid"><button class="primary" onclick="saveCurrent('save')">💾 Save Bill</button><button class="green" onclick="generateQR()">📱 UPI QR</button><button onclick="printCurrent()">🖨️ Print</button><button onclick="saveCurrent('whatsapp')">💬 WhatsApp</button></div>
+   <div id="qrBox" class="qr hidden"><b>Scan to Pay</b><div id="qrcode"></div><strong id="qrAmount">₹0</strong><small id="qrRef"></small><button onclick="window.print()">Print QR</button></div>
+  </div>
+ </div>
+</section>
+
+<section id="products" class="page hidden">
+ <div class="page-head"><div><h1>Products & Inventory</h1><p>Manage price, stock, categories and low-stock levels.</p></div><button class="primary" onclick="openProduct()">＋ Add Product</button></div>
+ <div class="card"><div class="toolbar"><input id="productSearch" placeholder="🔎 Search products..." oninput="renderProducts()"><button onclick="seedProducts()">↺ Add Demo Products</button></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Low at</th><th>Actions</th></tr></thead><tbody id="productTable"></tbody></table></div></div>
+</section>
+
+<section id="customers" class="page hidden">
+ <div class="page-head"><div><h1>Customers</h1><p>Customer details and purchase totals.</p></div><button class="primary" onclick="openCustomer()">＋ Add Customer</button></div>
+ <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Bills</th><th>Spent</th><th>Action</th></tr></thead><tbody id="customerTable"></tbody></table></div></div>
+</section>
+
+<section id="sales" class="page hidden">
+ <div class="page-head"><div><h1>Sales History</h1><p>Find, print or delete saved bills.</p></div></div>
+ <div class="card"><div class="toolbar"><input id="salesSearch" placeholder="🔎 Bill no / customer / phone" oninput="renderSales()"><button onclick="exportCSV()">📥 Export CSV</button></div><div class="table-wrap"><table><thead><tr><th>Bill</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th>Action</th></tr></thead><tbody id="salesTable"></tbody></table></div></div>
+</section>
+
+<section id="ledger" class="page hidden">
+ <div class="page-head"><div><h1>Udhaar / Ledger</h1><p>Credit sales are listed here. Mark them paid when received.</p></div></div>
+ <div class="card"><div class="stats compact"><div class="stat"><span>Total Udhaar</span><b id="creditTotal">₹0</b></div></div><div class="table-wrap"><table><thead><tr><th>Bill</th><th>Customer</th><th>Phone</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="ledgerTable"></tbody></table></div></div>
+</section>
+
+<section id="reports" class="page hidden">
+ <div class="page-head"><div><h1>Reports</h1><p>Sales summary by date range and payment method.</p></div></div>
+ <div class="card"><div class="form-grid"><input id="fromDate" type="date"><input id="toDate" type="date"><button class="primary" onclick="renderReports()">Generate</button></div><div class="stats"><div class="stat"><span>Sales</span><b id="rSales">₹0</b></div><div class="stat"><span>Bills</span><b id="rBills">0</b></div><div class="stat"><span>Average Bill</span><b id="rAvg">₹0</b></div></div><div id="paymentReport"></div></div>
+</section>
+
+<section id="settings" class="page hidden">
+ <div class="page-head"><div><h1>Store Settings</h1><p>These details appear on receipts and UPI QR payments.</p></div></div>
+ <div class="card settings"><div class="form-grid"><label>Store name<input id="sName"></label><label>Phone<input id="sPhone"></label><label>UPI ID<input id="sUpi" placeholder="shop@upi"></label><label>Address<input id="sAddress"></label><label>GSTIN (optional)<input id="sGstin"></label><label>Receipt footer<input id="sFooter" placeholder="Thank you for shopping!"></label></div><button class="primary" onclick="saveSettings()">Save Settings</button><hr><h2>Data</h2><button class="danger" onclick="resetData()">⚠️ Reset all local data</button></div>
+</section>
+</main>
+</div>
+
+<div id="modal" class="modal hidden"><div class="modal-card"><h2 id="modalTitle">Add Product</h2><div class="form-grid"><input id="pName" placeholder="Product name"><input id="pPrice" type="number" step=".01" placeholder="Selling price"><input id="pStock" type="number" placeholder="Stock"><input id="pLow" type="number" value="5" placeholder="Low stock at"><input id="pCat" placeholder="Category"></div><div class="modal-actions"><button onclick="closeModal()">Cancel</button><button class="primary" onclick="saveProduct()">Save</button></div></div></div>
+<div id="customerModal" class="modal hidden"><div class="modal-card"><h2>Add Customer</h2><div class="form-grid"><input id="cName" placeholder="Name"><input id="cPhone" placeholder="Mobile"></div><div class="modal-actions"><button onclick="closeCustomer()">Cancel</button><button class="primary" onclick="saveCustomer()">Save</button></div></div></div>
+<div id="printArea" class="print-area"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>
